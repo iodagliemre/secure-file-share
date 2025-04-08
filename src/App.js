@@ -33,10 +33,17 @@ export default function App() {
   }, [isAuthorized]);
 
   const handleDownload = async (fileName) => {
-    const { data } = await supabase.storage
+    const cleanedFileName = fileName.startsWith("/") ? fileName.slice(1) : fileName;
+  
+    const { data } = supabase.storage
       .from("documents")
-      .getPublicUrl(fileName);
-    window.open(data.publicUrl, "_blank");
+      .getPublicUrl(cleanedFileName);
+  
+    if (data?.publicUrl) {
+      window.open(data.publicUrl, "_blank");
+    } else {
+      alert("Dosya URL'si alınamadı.");
+    }
   };
 
   if (!isAuthorized) {

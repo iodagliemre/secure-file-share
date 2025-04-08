@@ -12,33 +12,40 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState("");
   const [files, setFiles] = useState([]);
 
-  const checkPasswordFromURL = () => {
+  // URL'den şifre kontrolü
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (code === PASSWORD) {
       setIsAuthorized(true);
     }
-  };
-
-  useEffect(() => {
-    checkPasswordFromURL();
   }, []);
 
+  // Dosya listesini yükle
   useEffect(() => {
     const fetchFiles = async () => {
-      let { data, error } = await supabase.storage.from("documents").list();
-      if (!error) setFiles(data);
+      if (!isAuthorized) return;
+      const { data, error } = await supabase.storage.from("documents").list();
+
+      if (error) {
+        console.error("Supabase dosya çekme hatası:", error.message);
+      } else {
+        setFiles(data);
+        console.log("Dosyalar yüklendi:", data);
+      }
     };
-    if (isAuthorized) fetchFiles();
+
+    fetchFiles();
   }, [isAuthorized]);
 
+  // Dosya indirme
   const handleDownload = async (fileName) => {
     const cleanedFileName = fileName.startsWith("/") ? fileName.slice(1) : fileName;
-  
+
     const { data } = supabase.storage
       .from("documents")
       .getPublicUrl(cleanedFileName);
-  
+
     if (data?.publicUrl) {
       window.open(data.publicUrl, "_blank");
     } else {
@@ -46,6 +53,7 @@ export default function App() {
     }
   };
 
+  // Şifre girişi
   if (!isAuthorized) {
     return (
       <div style={{ padding: "2rem" }}>
@@ -56,29 +64,42 @@ export default function App() {
           onChange={(e) => setPasswordInput(e.target.value)}
           style={{ padding: "0.5rem", marginRight: "1rem" }}
         />
-        <button onClick={() => passwordInput === PASSWORD && setIsAuthorized(true)}>
+        <button
+          onClick={() => {
+            if (passwordInput === PASSWORD) {
+              setIsAuthorized(true);
+            } else {
+              alert("Şifre yanlış.");
+            }
+          }}
+        >
           Giriş
         </button>
       </div>
     );
   }
 
+  // Dosya listesi
   return (
     <div style={{ padding: "2rem" }}>
       <h2>Paylaşılan Dosyalar</h2>
-      <ul>
-        {files.map((file) => (
-          <li key={file.name} style={{ marginBottom: "1rem" }}>
-            {file.name}
-            <button
-              style={{ marginLeft: "1rem" }}
-              onClick={() => handleDownload(file.name)}
-            >
-              İndir
-            </button>
-          </li>
-        ))}
-      </ul>
+      {files.length === 0 ? (
+        <p>Henüz bir dosya yüklenmemiş.</p>
+      ) : (
+        <ul>
+          {files.map((file) => (
+            <li key={file.name} style={{ marginBottom: "1rem" }}>
+              {file.name}
+              <button
+                style={{ marginLeft: "1rem" }}
+                onClick={() => handleDownload(file.name)}
+              >
+                İndir
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

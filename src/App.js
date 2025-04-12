@@ -24,24 +24,19 @@ export default function App() {
   useEffect(() => {
     const fetchFiles = async () => {
       if (!isAuthorized) return;
-
+  
       const { data, error } = await supabase.storage
         .from("documents")
-        .list("", {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: "name", order: "asc" }
-        });
-
+        .list("", { limit: 100 });
+  
       if (error) {
-        console.error("Supabase .list() hatası:", error.message);
-        setError("Dosya listesi alınamadı.");
+        console.error("❌ list() hatası:", error.message);
       } else {
-        console.log("Supabase'den gelen:", data);
+        console.log("🔎 Supabase'den gelen veri:", data);
         setFiles(data);
       }
     };
-
+  
     fetchFiles();
   }, [isAuthorized]);
 

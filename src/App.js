@@ -10,7 +10,7 @@ const PASSWORD = "1234";
 export default function App() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
-  const [files, setFiles] = useState([{ name: "Acil Durum Yonetimi.mp4" }]); // 👈 Manuel olarak dosya ekledik
+  const [files, setFiles] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -20,6 +20,30 @@ export default function App() {
       setIsAuthorized(true);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      if (!isAuthorized) return;
+
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .list("", {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: "name", order: "asc" }
+        });
+
+      if (error) {
+        console.error("Supabase .list() hatası:", error.message);
+        setError("Dosya listesi alınamadı.");
+      } else {
+        console.log("Supabase'den gelen:", data);
+        setFiles(data);
+      }
+    };
+
+    fetchFiles();
+  }, [isAuthorized]);
 
   const handleDownload = async (fileName) => {
     const cleanedFileName = fileName.startsWith("/") ? fileName.slice(1) : fileName;

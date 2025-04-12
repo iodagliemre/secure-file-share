@@ -23,27 +23,32 @@ export default function App() {
 
   useEffect(() => {
     const fetchFiles = async () => {
-      console.log("🧠 fetchFiles fonksiyonu çalıştı"); // 👈 BU SATIRI EKLE
+      console.log("📁 egitim klasörü içi okunuyor...");
       if (!isAuthorized) return;
-  
+
       const { data, error } = await supabase.storage
         .from("documents")
-        .list("", { limit: 100 });
-  
+        .list("egitim", {
+          limit: 100,
+          offset: 0,
+          sortBy: { column: "name", order: "asc" }
+        });
+
       if (error) {
-        console.error("❌ list() hatası:", error.message);
+        console.error("❌ Supabase list hatası:", error.message);
+        setError("Dosya listesi alınamadı.");
       } else {
-        console.log("🔎 Supabase'den gelen veri:", data);
+        console.log("🔎 egitim klasörü:", data);
         setFiles(data);
       }
     };
-  
+
     fetchFiles();
   }, [isAuthorized]);
 
   const handleDownload = async (fileName) => {
-    const cleanedFileName = fileName.startsWith("/") ? fileName.slice(1) : fileName;
-    const { data } = supabase.storage.from("documents").getPublicUrl(cleanedFileName);
+    const fullPath = `egitim/${fileName}`;
+    const { data } = supabase.storage.from("documents").getPublicUrl(fullPath);
 
     if (data?.publicUrl) {
       window.open(data.publicUrl, "_blank");
@@ -79,7 +84,7 @@ export default function App() {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Paylaşılan Dosyalar</h2>
+      <h2>Paylaşılan Dosyalar (egitim klasörü)</h2>
       {error ? (
         <p style={{ color: "red" }}>{error}</p>
       ) : files.length === 0 ? (

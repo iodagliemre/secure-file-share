@@ -23,6 +23,7 @@ export default function App() {
 
   useEffect(() => {
     const fetchFiles = async () => {
+      console.log("🧠 fetchFiles fonksiyonu çalıştı"); // 👈 BU SATIRI EKLE
       if (!isAuthorized) return;
   
       const { data, error } = await supabase.storage

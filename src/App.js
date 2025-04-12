@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://fwlfdkdklpnvdkiqatzl.supabase.co";
@@ -23,22 +23,17 @@ export default function App() {
 
   useEffect(() => {
     const fetchFiles = async () => {
-      console.log("📁 egitim klasörü içi okunuyor...");
       if (!isAuthorized) return;
 
-      const { data, error } = await supabase.storage
-        .from("documents")
-        .list("egitim", {
-          limit: 100,
-          offset: 0,
-          sortBy: { column: "name", order: "asc" }
-        });
+      const { data, error } = await supabase
+        .from("files")
+        .select("name, path")
+        .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("❌ Supabase list hatası:", error.message);
+        console.error("Veritabanından veri alınamadı:", error.message);
         setError("Dosya listesi alınamadı.");
       } else {
-        console.log("🔎 egitim klasörü:", data);
         setFiles(data);
       }
     };
@@ -46,10 +41,8 @@ export default function App() {
     fetchFiles();
   }, [isAuthorized]);
 
-  const handleDownload = async (fileName) => {
-    const fullPath = `egitim/${fileName}`;
-    const { data } = supabase.storage.from("documents").getPublicUrl(fullPath);
-
+  const handleDownload = async (filePath) => {
+    const { data } = supabase.storage.from("documents").getPublicUrl(filePath);
     if (data?.publicUrl) {
       window.open(data.publicUrl, "_blank");
     } else {
@@ -84,19 +77,19 @@ export default function App() {
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h2>Paylaşılan Dosyalar (egitim klasörü)</h2>
+      <h2>Paylaşılan Dosyalar</h2>
       {error ? (
         <p style={{ color: "red" }}>{error}</p>
       ) : files.length === 0 ? (
-        <p>Henüz dosya yüklenmemiş.</p>
+        <p>Henüz dosya eklenmemiş.</p>
       ) : (
         <ul>
           {files.map((file) => (
-            <li key={file.name} style={{ marginBottom: "1rem" }}>
+            <li key={file.path} style={{ marginBottom: "1rem" }}>
               {file.name}
               <button
                 style={{ marginLeft: "1rem" }}
-                onClick={() => handleDownload(file.name)}
+                onClick={() => handleDownload(file.path)}
               >
                 İndir
               </button>
